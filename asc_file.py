@@ -13,7 +13,7 @@ class AscFile(object):
             self._file.seek(0, SEEK_SET)
         return self
 
-    def next(self):
+    def __next__(self):
         if hasattr(self._file, 'seek'):
             if self._file.read(1) == '':
                 raise StopIteration

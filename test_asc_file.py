@@ -1,9 +1,9 @@
 import unittest
-from StringIO import StringIO
+from io import BytesIO
 import numpy as np
 from asc_file import AscFile
 
-TEST_ASC = '''\
+TEST_ASC = b'''\
 1\t1\t2\t-3\r
 2\t3\t4\t5\r
 1\t-6\t7\t8\r
@@ -13,7 +13,7 @@ TEST_ASC = '''\
 
 class TestAscFile(unittest.TestCase):
     def setUp(self):
-        self.obj = AscFile(StringIO(TEST_ASC), num_rows=2)
+        self.obj = AscFile(BytesIO(TEST_ASC), num_rows=2)
 
     def test1(self):
         it = iter(self.obj)
