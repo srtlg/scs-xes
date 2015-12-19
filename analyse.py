@@ -55,7 +55,8 @@ def _argparse():
     p.add_argument('-I', '--interactive', action='store_true', default=False)
     p.add_argument('--clf', action='store_true', default=False)
     p.add_argument('--vmax-diff', type=int, default=10)
-    p.add_argument('-C', '--curvature', action='store_true', default=False)
+    p.add_argument('-C', '--get-curvature', action='store_true', default=False)
+    p.add_argument('-c', '--curvature', default=None)
     p.add_argument('-O', '--pickle-clusters', default=None)
     g1 = p.add_argument_group('curvature')
     g1.add_argument('--accumulation-coordinate', choices=('fast', 'slow'), default='slow')
@@ -91,7 +92,7 @@ def _accumulate_clusters(acc, incr):
         return ret
 
 
-def _curvature_correction(args, clusters_acc):
+def _determine_curvature_correction(args, clusters_acc):
     if args.accumulation_coordinate == 'slow':
         get_acc = lambda x: x['yc']
         get_energy = lambda x: x['xc']
@@ -152,14 +153,39 @@ def _curvature_correction(args, clusters_acc):
         if args.clf:
             input('...')
         else:
-            print('show')
             plt.ioff()
             plt.show()
 
 
+def _apply_curvature(args, clusters_acc, correction):
+    if args.accumulation_coordinate == 'slow':
+        get_acc = lambda x: x['yc']
+        get_energy = lambda x: x['xc']
+    elif args.accumulation_coordinate == 'fast':
+        get_acc = lambda x: x['xc']
+        get_energy = lambda x: x['yc']
+    else:
+        raise AssertionError
+    assert len(correction) == 2
+    energy = get_energy(clusters_acc) - (correction[0] * get_acc(clusters_acc) + correction[1])
+    if args.interactive:
+        plt.hist(energy, args.energy_nbin, histtype='step')
+        plt.xlabel('corrected energy (pixel)')
+        plt.ylabel('intensity')
+        if args.energy_start:
+            plt.xlim(xmin=args.energy_start)
+        if args.energy_stop:
+            plt.xlim(xmax=args.energy_stop)
+        plt.ioff()
+        plt.show()
+
+
 def _process_clusters(args, clusters_acc):
-    if args.curvature:
-        _curvature_correction(args, clusters_acc)
+    if args.get_curvature:
+        _determine_curvature_correction(args, clusters_acc)
+    elif args.curvature:
+        correction = [float(i) for i in args.curvature.split(',')]
+        _apply_curvature(args, clusters_acc, correction)
     elif args.pickle_clusters is not None:
         if args.pickle_clusters.endswith('npy'):
             tail = ''
