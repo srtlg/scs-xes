@@ -39,9 +39,9 @@ def _accumulate_clusters(acc, incr):
     else:
         assert acc.dtype == incr.dtype
         old_size = acc.size
-        acc.resize((old_size + incr.size,))
-        acc[old_size:] = incr[:]
-        return acc
+        ret = np.resize(acc, (old_size + incr.size,))
+        ret[old_size:] = incr[:]
+        return ret
 
 
 def _process_clusters(args, clusters_acc):
@@ -64,14 +64,21 @@ def _process_clusters(args, clusters_acc):
             print(*cluster)
 
 
-def main():
-    args = _argparse()
+def _load_images(args):
     if args.infile.endswith('asc'):
-        img = AscFile(args.infile, dtype=np.int16)
+        return AscFile(args.infile, dtype=np.int16)
     elif args.infile.endswith('dat'):
-        img = [np.loadtxt(args.infile, dtype=np.int16)]
+        img = []
+        for path in args.infile.split(','):
+            img.append(np.loadtxt(path, dtype=np.int16))
+        return img
     else:
         raise NotImplementedError
+
+
+def main():
+    args = _argparse()
+    img = _load_images(args)
     if args.interactive:
         plt.ion()
     _log.info('reading...')

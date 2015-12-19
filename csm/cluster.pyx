@@ -32,7 +32,7 @@ Cluster_dtype = np.dtype([
 
 
 cdef enum:
-    BLOCK_SIZE = 1024
+    BLOCK_SIZE = 10*1024
 
 
 cdef packed struct Cluster_t:
