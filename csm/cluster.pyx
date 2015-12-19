@@ -55,11 +55,11 @@ cdef void seeker(Cluster_t *cluster, np.ndarray image, int j, int i, int thresho
     image[j, i] = 0 # fixme assumes that threshold >= 0
     if (i - 1) >= 0 and image[j, i - 1] > threshold:
         seeker(cluster, image, j, i - 1, threshold)
-    elif (i + 1) < image.shape[1] and image[j, i + 1] > threshold:
+    if (i + 1) < image.shape[1] and image[j, i + 1] > threshold:
         seeker(cluster, image, j, i + 1, threshold)
-    elif (j - 1) >= 0 and image[j - 1, i] > threshold:
+    if (j - 1) >= 0 and image[j - 1, i] > threshold:
         seeker(cluster, image, j - 1, i, threshold)
-    elif (j + 1) < image.shape[0] and image[j + 1, i] > threshold:
+    if (j + 1) < image.shape[0] and image[j + 1, i] > threshold:
         seeker(cluster, image, j + 1, i, threshold)
 
 

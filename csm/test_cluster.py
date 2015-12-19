@@ -53,7 +53,7 @@ class TestClusterFig316(unittest.TestCase):
 
     def test(self):
         clusters = cluster_analysis(self.image)
-        self.assertEqual(12, len(clusters))
+        self.assertEqual(13, len(clusters))
 
 
 TEST_IMAGE_3 = """\
@@ -97,6 +97,6 @@ class TestClusterLineSouthWest(unittest.TestCase):
         self.assertEqual(1, len(clusters))
         cluster = clusters[0]
         self.assertEqual(np.sum(self.image), cluster.ec)
-        self.assertAlmostEqual(float((3+5)*0 + (3+2)*1 + 4*3 + (3+5)*3 + 6*4)/cluster.ec, cluster.yc)
+        self.assertAlmostEqual(float((3+5)*0 + (3+2)*1 + 4*2 + (3+5)*3 + 6*4)/cluster.ec, cluster.xc)
         self.assertAlmostEqual(float((3+6)*0 + (3+4+5)*1 + (3+2)*2 + 5*3)/cluster.ec, cluster.yc)
         self.assertEqual(8, cluster.nc)
