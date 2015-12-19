@@ -22,18 +22,31 @@ cimport numpy as np
 from libc.string cimport memset
 
 
-cdef struct Cluster:
+Cluster_dtype = np.dtype([
+    ('ec', np.int32),
+    ('nc', np.int32),
+    ('xc', np.float64),
+    ('yc', np.float64),
+    ])
+
+
+cdef enum:
+    BLOCK_SIZE = 2
+
+
+cdef packed struct Cluster_t:
     int ec
     int nc
     double xc
     double yc
 
+
 #@cython.boundscheck(False)
 #@cython.wraparound(False)
-cdef void seeker(Cluster *cluster, np.ndarray image, int j, int i, int threshold):
+cdef void seeker(Cluster_t *cluster, np.ndarray image, int j, int i, int threshold):
     cdef int ec0 = cluster.ec
     #print(cluster.nc, cluster.ec, cluster.xc, cluster.yc, ':', j, i, threshold, '|', image[j, i])
-    cluster.nc += cluster.nc
+    cluster.nc += 1
     cluster.ec += image[j, i]
     cluster.xc = (cluster.xc * ec0 + i * image[j, i]) / cluster.ec
     cluster.yc = (cluster.yc * ec0 + j * image[j, i]) / cluster.ec
@@ -51,8 +64,8 @@ cdef void seeker(Cluster *cluster, np.ndarray image, int j, int i, int threshold
 def cluster_analysis(np.ndarray image, int threshold=0):
     """
     Run cluster analysis on 2d-detector output
-    :param image: the image to be analysed
-    :param threshold: the threshold for colouring the pixels
+    :param image: [in] the image to be analysed
+    :param threshold: [in] the threshold for colouring the pixels
     :return: the found clusters
     """
     assert image.ndim == 2
@@ -61,12 +74,18 @@ def cluster_analysis(np.ndarray image, int threshold=0):
     cdef int i
     cdef int j
     cdef int ic = 0
-    cdef Cluster cluster
     cdef image_work = image.copy()
+    cdef np.ndarray[Cluster_t, ndim=1] cluster_array
+    cluster_array = np.recarray(shape=(BLOCK_SIZE,), dtype=Cluster_dtype)
+    memset(&cluster_array[0], 0, cluster_array.size * cluster_array.itemsize)
     for j in range(iy_max):
         for i in range(ix_max):
-            if image[j][i] > threshold:
-                memset(&cluster, 0, sizeof(Cluster))
-                seeker(&cluster, image_work, j, i, threshold)
+            if image_work[j][i] > threshold:
+                seeker(&cluster_array[ic], image_work, j, i, threshold)
                 ic += 1
-                return cluster
+                if ic >= cluster_array.size:
+                    cluster_array.resize((ic + BLOCK_SIZE,), refcheck=False)
+                    memset(&cluster_array[ic], 0, BLOCK_SIZE * cluster_array.itemsize)
+    cluster_array.resize((ic,), refcheck=False)
+    return cluster_array
+

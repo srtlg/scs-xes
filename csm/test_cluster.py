@@ -4,43 +4,30 @@ from io import StringIO
 from cluster import cluster_analysis
 
 
-# adopted from Figure 3.16 of [Trassinelli2005]_
-TEST_IMAGE = """\
- . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . # 0
- . . . . . . . . . . 3 4 . . . . 2 5 7 . . . . . . . . . . . . . . . . . . # 1
- . . . . . . . . . . 1 1 . . 2 4 5 5 3 . . . . . . . . . . . . . . . . . . # 2
- . . . 3 1 . . . . . . . . 4 5 6 4 3 . . . . . . . . . . . . . . . . . . . # 3
- . . . 4 2 . . . . . 1 2 2 7 4 2 . . . . . . . . 2 1 . . . . . . . . . . . # 4
- . . . . . . . . . . 3 4 5 5 2 . . . . . . . . . 5 1 . . . . . . . . . . . # 5
- . . . . . . . . . 4 4 . . . . . . . . . . . . . . . . . . . 5 8 5 . . . . # 6
- . . . . . . . . 4 6 4 . . . . . . . . . . . . . . . . . . . . . . . . . . # 7
- . . . . . 1 3 3 3 4 2 . . . 2 2 . . . . . . . . . . . . . . . . . . . . . # 8
- . . . 1 1 3 7 6 1 . . . . . 4 5 1 . . . . . . . . . . . . . . . . . . . . # 9
- . . 1 4 6 5 5 . . . 1 1 . . 3 6 4 . . . . . . . . . . . . . . . . . . . . #10
- . . 4 2 1 1 1 . . . 3 4 . . . 1 1 . . . . . . . . . . . . . . . . . . . . # 1
- . 6 2 . . . . . . . 1 1 . . . . . . . . . . . . . 4 3 . . . . . . . . . . # 2
- . 7 . . . . . . . . . . . . . . . . . . . . . . . 4 5 4 . . . . . . 4 4 2 # 3
- . 4 . . . . . . . . . . . . . . 2 1 . . . . . . 1 4 5 6 1 . . . . . 6 4 2 # 4
- . . . . . . . . . . . . . . . 3 8 5 1 . . . . . 6 7 6 7 7 1 . . . . 7 2 . # 5
- . . . 5 3 . . . . . . . . . . . . . . . . . . . . 4 5 6 6 5 2 . . . . . . # 6
- . . . 1 1 . . . . . . . . . . . . . . . . . . . . 1 2 2 6 2 1 . . . . . . # 7
- . . . . . . . . . . . . . 4 1 . . . . . . . . . . . . . 4 . . . . . . . . # 8
- . . . . . . . . . . . . . 4 1 . . . . . . . . . . . . . . . . . . . . . . # 9
- . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . #20
- . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . # 1
-#0                   1                   2                   3
-#0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6
+TEST_IMAGE_1 = """\
+ . . . . . . # 0
+ . . 3 . . . # 1
+ . . 5 2 . . # 2
+ . . . 1 . . # 3
+#0 1 2 3 4 5
 """
 
 
-class TestClusterFig316(unittest.TestCase):
+class TestClusterSingle(unittest.TestCase):
     def setUp(self):
-        self.image = np.loadtxt(StringIO(TEST_IMAGE_2.replace('.', '0')), dtype=np.int16)
+        self.image = np.loadtxt(StringIO(TEST_IMAGE_1.replace('.', '0')), dtype=np.int16)
 
     def test(self):
-        c = cluster_analysis(self.image)
+        clusters = cluster_analysis(self.image)
+        self.assertEqual(1, len(clusters))
+        cluster = clusters[0]
+        self.assertEqual(3+5+2+1, cluster.ec)
+        self.assertAlmostEqual((3.0*2 + 5*2 + 2*3 + 1*3)/cluster.ec, cluster.xc)
+        self.assertAlmostEqual((3.0*1 + 5*2 + 2*2 + 1*3)/cluster.ec, cluster.yc)
+        self.assertEqual(4, cluster.nc)
 
 
+# adopted from Figure 3.16 of [Trassinelli2005]_
 TEST_IMAGE_2 = """\
  . . . . . . 1 2 . . . 4 . . . . . . . . . . . . # 0
  . . . . . . . . . 5 6 3 . . . . . . . . . . . . # 1
@@ -60,9 +47,10 @@ TEST_IMAGE_2 = """\
 """
 
 
-class TestClusterFig316b(unittest.TestCase):
+class TestClusterFig316(unittest.TestCase):
     def setUp(self):
         self.image = np.loadtxt(StringIO(TEST_IMAGE_2.replace('.', '0')), dtype=np.int16)
 
     def test(self):
         clusters = cluster_analysis(self.image)
+        self.assertEqual(12, len(clusters))
