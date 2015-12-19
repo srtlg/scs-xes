@@ -11,8 +11,8 @@ def _argparse():
     p = argparse.ArgumentParser()
     p.add_argument('infile')
     p.add_argument('-t', '--threshold', type=int, default=100)
-    p.add_argument('-c', '--clustersize', type=int, default=6)
     p.add_argument('-I', '--interactive', action='store_true', default=False)
+    p.add_argument('--vmax-diff', type=int, default=10)
     return p.parse_args()
 
 
@@ -26,12 +26,13 @@ def main():
         raise NotImplementedError
     if args.interactive:
         plt.ion()
+    print('reading...')
     for i in img:
         print('cluster analysis...')
         clusters = cluster_analysis(i, args.threshold)
         if args.interactive:
             plt.clf()
-            plt.imshow(i, vmin=args.threshold, vmax=args.threshold+10, 
+            plt.imshow(i, vmin=args.threshold, vmax=args.threshold+args.vmax_diff,
                 cmap=cmap.gray_r, interpolation='nearest')
             plt.plot(clusters.xc, clusters.yc, 'ro')
             plt.draw()

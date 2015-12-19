@@ -54,3 +54,49 @@ class TestClusterFig316(unittest.TestCase):
     def test(self):
         clusters = cluster_analysis(self.image)
         self.assertEqual(12, len(clusters))
+
+
+TEST_IMAGE_3 = """\
+ . . . . . # 0
+ . . . . . # 1
+ . . 1 7 2 # 2
+ . . . 3 . # 3
+ . . . . . # 4
+ . . . . . # 5
+#0 1 2 3 4
+"""
+
+class TestClusterTee(unittest.TestCase):
+    def setUp(self):
+        self.image = np.loadtxt(StringIO(TEST_IMAGE_3.replace('.', '0')), dtype=np.int16)
+
+    def test(self):
+        clusters = cluster_analysis(self.image)
+        self.assertEqual(1, len(clusters))
+        cluster = clusters[0]
+        self.assertEqual(1+7+2+3, cluster.ec)
+        self.assertAlmostEqual((1.0*2 + 7*3 + 3*3 + 2*4)/cluster.ec, cluster.xc)
+        self.assertAlmostEqual((1.0*2 + 7*2 + 2*2 + 3*3)/cluster.ec, cluster.yc)
+        self.assertEqual(4, cluster.nc)
+
+
+TEST_IMAGE_4 = """\
+ . . . 3 6 . . # 0
+ . 3 4 5 . . . # 1
+ 3 2 . . . . . # 2
+ 5 . . . . . . # 3
+#0 1 2 3 4 5 6 
+"""
+
+class TestClusterLineSouthWest(unittest.TestCase):
+    def setUp(self):
+        self.image = np.loadtxt(StringIO(TEST_IMAGE_4.replace('.', '0')), dtype=np.int16)
+
+    def test(self):
+        clusters = cluster_analysis(self.image)
+        self.assertEqual(1, len(clusters))
+        cluster = clusters[0]
+        self.assertEqual(np.sum(self.image), cluster.ec)
+        self.assertAlmostEqual(float((3+5)*0 + (3+2)*1 + 4*3 + (3+5)*3 + 6*4)/cluster.ec, cluster.yc)
+        self.assertAlmostEqual(float((3+6)*0 + (3+4+5)*1 + (3+2)*2 + 5*3)/cluster.ec, cluster.yc)
+        self.assertEqual(8, cluster.nc)
