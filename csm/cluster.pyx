@@ -1,3 +1,5 @@
+# cython: profile=True
+# cython: linetrace=True
 """
 Implement the cluster analysis of CSM
 =====================================
@@ -46,7 +48,6 @@ cdef packed struct Cluster_t:
 #@cython.wraparound(False)
 cdef void seeker(Cluster_t *cluster, np.ndarray image, int j, int i, int threshold):
     cdef int ec0 = cluster.ec
-    assert image[j, i] > threshold
     cluster.nc += 1
     cluster.ec += image[j, i]
     cluster.xc = (cluster.xc * ec0 + i * image[j, i]) / cluster.ec
@@ -71,12 +72,12 @@ def cluster_analysis(np.ndarray image, int threshold=0):
     :return: the found clusters
     """
     assert image.ndim == 2, 'this routine expects a two dimensional image, got %d' % image.ndim
-    cdef iy_max = image.shape[0]
-    cdef ix_max = image.shape[1]
+    cdef int iy_max = image.shape[0]
+    cdef int ix_max = image.shape[1]
     cdef int i
     cdef int j
     cdef int ic = 0
-    cdef image_work = image.copy()
+    cdef np.ndarray image_work = image.copy()
     cdef np.ndarray[Cluster_t, ndim=1] cluster_array
     cluster_array = np.recarray(shape=(BLOCK_SIZE,), dtype=Cluster_dtype)
     memset(&cluster_array[0], 0, cluster_array.size * cluster_array.itemsize)
