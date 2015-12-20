@@ -21,7 +21,7 @@ import numpy as np
 cimport cython
 cimport numpy as np
 from libc.string cimport memset
-from libc.stdint cimport int32_t, int16_t
+from libc.stdint cimport int32_t, int16_t, INT16_MAX
 
 
 Cluster_dtype = np.dtype([
@@ -78,6 +78,7 @@ def cluster_analysis(np.ndarray image, int16_t image_index=-1, int threshold=0):
     """
     assert threshold >= 0, 'threshold too low, adjust NOT_CHARGED'
     assert image.ndim == 2, 'this routine expects a two dimensional image, got %d' % image.ndim
+    assert (image <= INT16_MAX).all(), 'conversion into DTYPE will fail'
     cdef int iy_max = image.shape[0]
     cdef int ix_max = image.shape[1]
     cdef int i
