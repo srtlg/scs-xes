@@ -93,18 +93,85 @@ def _accumulate_clusters(acc, incr):
         return ret
 
 
+class AccumulationCoordinateProxy:
+    def __init__(self, args, clusters_acc):
+        assert isinstance(clusters_acc, np.ndarray)
+        assert clusters_acc.dtype == Cluster_dtype
+        self.clusters_acc = clusters_acc
+        if args.accumulation_coordinate == 'slow':
+            self.acc_key = 'yc'
+            self.energy_key = 'xc'
+            self.acc_norm = float(args.image_shape[0])
+        elif args.accumulation_coordinate == 'fast':
+            self.acc_key = 'xc'
+            self.energy_key = 'yc'
+            self.acc_norm = float(args.image_shape[1])
+        else:
+            raise NotImplementedError
+
+    def get_acc(self):
+        return self.clusters_acc[self.acc_key]
+
+    def get_energy(self):
+        return self.clusters_acc[self.energy_key]
+
+
+class FitCurvatureQuadratic:
+    def __init__(self, coefficients):
+        assert len(coefficients) == 4
+        self.c = coefficients
+
+    def at(self, x):
+        xarr = np.asarray(x) / self.c[0]
+        return self.c[1] * xarr**2 + self.c[2] * xarr + self.c[3]
+
+    def to_cmd_line(self):
+        return '-c' + (','.join(['%g' % i for i in self.c]))
+
+    @classmethod
+    def from_points(cls, acc_norm, acc_coord, energy_coord):
+        curvature_acc_coord = np.asarray(acc_coord)
+        curvature_energy_max = np.asarray(energy_coord)
+        initial_slope = np.mean(np.diff(energy_coord))
+        initial_intercept = energy_coord[0]
+        par, pcov = curve_fit(lambda x, a, b, c: a * x ** 2 + b * x + c,
+                              curvature_acc_coord / acc_norm, curvature_energy_max,
+                              p0=(0, initial_slope, initial_intercept))
+        return cls([acc_norm, par[0], par[1], par[2]])
+
+
+class FitCurvatureLinear:
+    def __init__(self, coefficients):
+        assert len(coefficients) == 3
+        self.c = coefficients
+
+    def at(self, x):
+        xarr = np.asarray(x) / self.c[0]
+        return self.c[1] * xarr + self.c[2]
+
+    def to_cmd_line(self):
+        return '-c' + (','.join(['%g' % i for i in self.c]))
+
+    @classmethod
+    def from_points(cls, acc_norm, acc_coord, energy_coord):
+        curvature_acc_coord = np.asarray(acc_coord)
+        curvature_energy_max = np.asarray(energy_coord)
+        initial_slope = np.mean(np.diff(energy_coord))
+        initial_intercept = energy_coord[0]
+        par, pcov = curve_fit(lambda x, a, b: a * x + b,
+                              curvature_acc_coord / acc_norm, curvature_energy_max,
+                              p0=(initial_slope, initial_intercept))
+        return cls([acc_norm, par[0], par[1]])
+
+
+FitCurvature = FitCurvatureQuadratic
+
+
 def _determine_curvature_correction(args, clusters_acc):
-    if args.accumulation_coordinate == 'slow':
-        get_acc = lambda x: x['yc']
-        get_energy = lambda x: x['xc']
-    elif args.accumulation_coordinate == 'fast':
-        get_acc = lambda x: x['xc']
-        get_energy = lambda x: x['yc']
-    else:
-        raise AssertionError
-    min_acc = args.accumulation_start if args.accumulation_start else np.min(get_acc(clusters_acc))
+    proxy = AccumulationCoordinateProxy(args, clusters_acc)
+    min_acc = args.accumulation_start if args.accumulation_start else np.min(proxy.get_acc())
     min_acc = int(np.round(min_acc))
-    max_acc = args.accumulation_stop if args.accumulation_stop else np.max(get_acc(clusters_acc))
+    max_acc = args.accumulation_stop if args.accumulation_stop else np.max(proxy.get_acc())
     max_acc = int(np.round(max_acc))
     if args.interactive:
         if args.clf:
@@ -116,16 +183,16 @@ def _determine_curvature_correction(args, clusters_acc):
     curvature_acc_coord = []
     for idx_acc in range(min_acc, max_acc, args.accumulation_slice):
         subset = np.nonzero(
-            (get_acc(clusters_acc) >= idx_acc)
-            & (get_acc(clusters_acc) < idx_acc + args.accumulation_slice))
+            (proxy.get_acc() >= idx_acc)
+            & (proxy.get_acc() < idx_acc + args.accumulation_slice))
         if bin_edges is None:
             kwargs = {'bins': args.energy_nbin}
             if args.energy_start and args.energy_stop:
                 kwargs['range'] = args.energy_start, args.energy_stop
-            hist, bin_edges = np.histogram(get_energy(clusters_acc)[subset], **kwargs)
+            hist, bin_edges = np.histogram(proxy.get_energy()[subset], **kwargs)
             energy = (bin_edges[:-1] + bin_edges[1:]) / 2
         else:
-            hist, _ = np.histogram(get_energy(clusters_acc)[subset], bins=bin_edges)
+            hist, _ = np.histogram(proxy.get_energy()[subset], bins=bin_edges)
         f = FitGaussian(energy, hist)
         f.optimize()
         curvature_acc_coord.append(idx_acc + args.accumulation_slice / 2.0)
@@ -140,16 +207,17 @@ def _determine_curvature_correction(args, clusters_acc):
             plt.draw()
             if args.clf:
                 input('slice[%d:%d]>' % (idx_acc, idx_acc + args.accumulation_slice))
-    curvature_acc_coord = np.asarray(curvature_acc_coord)
-    curvature_energy_max = np.asarray(curvature_energy_max)
-    lin_par, lin_pcov = curve_fit(lambda x, a, b: a*x + b, curvature_acc_coord, curvature_energy_max,
-        p0=(np.mean(np.diff(curvature_energy_max)), curvature_energy_max[0]))
-    print('curvature:', lin_par)
+    curvature = FitCurvature.from_points(proxy.acc_norm, curvature_acc_coord, curvature_energy_max)
+    print('curvature:', curvature.to_cmd_line())
     if args.interactive:
         plt.figure(2)
+        ax = plt.subplot(211)
         plt.plot(curvature_acc_coord, curvature_energy_max, 'o')
-        plt.plot(curvature_acc_coord, lin_par[0] * curvature_acc_coord + lin_par[1])
+        plt.plot(curvature_acc_coord, curvature.at(curvature_acc_coord))
         plt.xlabel('accumulation coordinate (pixel)')
+        plt.ylabel('max. energy coordinate (pixel)')
+        plt.subplot(212, sharex=ax)
+        plt.plot(curvature_acc_coord, np.asarray(curvature_energy_max) - curvature.at(curvature_acc_coord), 'o')
         plt.ylabel('max. energy coordinate (pixel)')
         if args.clf:
             input('...')
@@ -159,16 +227,9 @@ def _determine_curvature_correction(args, clusters_acc):
 
 
 def _apply_curvature(args, clusters_acc, correction):
-    if args.accumulation_coordinate == 'slow':
-        get_acc = lambda x: x['yc']
-        get_energy = lambda x: x['xc']
-    elif args.accumulation_coordinate == 'fast':
-        get_acc = lambda x: x['xc']
-        get_energy = lambda x: x['yc']
-    else:
-        raise AssertionError
-    assert len(correction) == 2
-    energy = get_energy(clusters_acc) - (correction[0] * get_acc(clusters_acc) + correction[1])
+    curvature = FitCurvature(correction)
+    proxy = AccumulationCoordinateProxy(args, clusters_acc)
+    energy = proxy.get_energy() - curvature.at(proxy.get_acc())
     if args.interactive:
         plt.hist(energy, args.energy_nbin, histtype='step')
         plt.xlabel('corrected energy (pixel)')
@@ -187,6 +248,7 @@ def _save_clusters(args, path, cluster_acc):
     with h5py.File(path, 'w') as fout:
         fout['/threshold'] = args.threshold
         fout['/image-files'] = args.infile
+        fout['/image-shape'] = args.image_shape
         fout['/cluster'] = cluster_acc
 
 
@@ -222,6 +284,10 @@ def _load_images(args):
         return img
     elif args.infile.endswith('npy'):
         return np.load(args.infile)
+    elif args.infile.endswith('.h5'):
+        inf = h5py.File(args.infile, 'r')
+        args.image_shape = inf['/image-shape'][:]
+        return inf['/cluster'][:]
     else:
         raise NotImplementedError
 
@@ -239,6 +305,8 @@ def main():
         clusters_acc = None
         index = 0
         for image in images:
+            if not hasattr(args, 'image_shape'):
+                args.image_shape = image.shape
             _log.info('cluster analysis...')
             clusters = cluster_analysis(image, index, args.threshold)
             _show_single_framge(args, clusters, image)
