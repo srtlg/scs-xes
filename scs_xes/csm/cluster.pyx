@@ -45,10 +45,12 @@ cdef packed struct Cluster_t:
     float xc
     float yc
 
+DTYPE = np.int16
+ctypedef int16_t DTYPE_t
 
 #@cython.boundscheck(False)
 #@cython.wraparound(False)
-cdef void seeker(Cluster_t *cluster, np.ndarray image, int j, int i, int threshold):
+cdef void seeker(Cluster_t *cluster, np.ndarray[DTYPE_t, ndim=2, mode='c'] image, int j, int i, DTYPE_t threshold):
     cdef int ec0 = cluster.ec
     cluster.nc += 1
     cluster.ec += image[j, i]
@@ -81,7 +83,7 @@ def cluster_analysis(np.ndarray image, int16_t image_index=-1, int threshold=0):
     cdef int i
     cdef int j
     cdef int ic = 0
-    cdef np.ndarray image_work = image.copy()
+    cdef np.ndarray[DTYPE_t, ndim=2, mode='c'] image_work = image.astype(DTYPE, order='C')
     cdef np.ndarray[Cluster_t, ndim=1, mode="c"] cluster_array
     cdef Cluster_t[:] cluster_view
     cluster_array = np.recarray(shape=(BLOCK_SIZE,), dtype=Cluster_dtype)
