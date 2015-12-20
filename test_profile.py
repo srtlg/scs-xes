@@ -1,8 +1,9 @@
+"""
+Use Python's profiler to speed up the cluster analysis
+"""
 import argparse
 import cProfile
 import numpy as np
-import pyximport
-pyximport.install()
 from csm.cluster import cluster_analysis
 from asc_file import AscFile
 
@@ -27,7 +28,10 @@ def _load_image(args):
 def main():
     args = _parse_args()
     image = _load_image(args)
-    cProfile.runctx('cluster_analysis(image)', globals(), locals(), 'test_profile.prof')
+    print('run cluster analysis...')
+    cProfile.runctx('cluster_analysis(image, args.threshold)',
+                    globals(), locals(), 'test_profile.prof')
+    print('done.')
 
 
 if __name__ == '__main__':
