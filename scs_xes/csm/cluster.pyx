@@ -83,10 +83,12 @@ def cluster_analysis(np.ndarray image, int16_t image_index=-1, int threshold=0):
     cdef int i
     cdef int j
     cdef int ic = 0
+    cdef int size_cached
     cdef np.ndarray[DTYPE_t, ndim=2, mode='c'] image_work = image.astype(DTYPE, order='C')
     cdef np.ndarray[Cluster_t, ndim=1, mode="c"] cluster_array
     cdef Cluster_t[:] cluster_view
     cluster_array = np.recarray(shape=(BLOCK_SIZE,), dtype=Cluster_dtype)
+    size_cached = cluster_array.size
     cluster_view = cluster_array
     memset(&cluster_array[0], 0, cluster_array.size * cluster_array.itemsize)
     for j in range(iy_max):
@@ -96,9 +98,10 @@ def cluster_analysis(np.ndarray image, int16_t image_index=-1, int threshold=0):
                 cluster_view[ic].image_index = image_index
                 seeker(&cluster_view[ic], image_work, j, i, threshold)
                 ic += 1
-                if ic >= cluster_array.size:
+                if ic >= size_cached:
                     cluster_array.resize((ic + BLOCK_SIZE,), refcheck=False)
                     cluster_view = cluster_array
+                    size_cached = cluster_array.size
                     # see documentation of numpy.resize: ndarray.resize fills
                     # with zeros
     cluster_array.resize((ic,), refcheck=False)
