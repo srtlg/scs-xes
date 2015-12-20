@@ -186,7 +186,7 @@ def _save_clusters(args, path, cluster_acc):
     assert cluster_acc.dtype == Cluster_dtype
     with h5py.File(path, 'w') as fout:
         fout['/threshold'] = args.threshold
-        fout['/image-files'] = path.infile
+        fout['/image-files'] = args.infile
         fout['/cluster'] = cluster_acc
 
 
@@ -202,7 +202,7 @@ def _process_clusters(args, clusters_acc):
         else:
             tail = '.h5'
         _log.debug('saving clusters to %s', args.pickle_clusters + tail)
-        _save_clusters(args, args.picle_clusters, clusters_acc)
+        _save_clusters(args, args.pickle_clusters + tail, clusters_acc)
     else:
         fields = sorted(Cluster_dtype.fields.items(), key=lambda x: x[1][1])
         for field in fields:
