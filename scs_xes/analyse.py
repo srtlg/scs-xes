@@ -235,14 +235,10 @@ def main():
         _log.info('processing pickled clusters from %s...', args.infile)
         clusters_acc = images
     else:
-        first = True
         _log.info('reading [0]...')
         clusters_acc = None
         index = 0
         for image in images:
-            if not first:
-                _log.info('reading [%d]...', index)
-                first = False
             _log.info('cluster analysis...')
             clusters = cluster_analysis(image, index, args.threshold)
             _show_single_framge(args, clusters, image)
@@ -250,6 +246,7 @@ def main():
             index += 1
             if args.restrict_number_images and index >= args.restrict_number_images:
                 break
+            _log.info('reading [%d]...', index)
     _process_clusters(args, clusters_acc)
 
 
