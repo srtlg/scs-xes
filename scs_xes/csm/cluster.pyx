@@ -19,7 +19,7 @@ Highly Charged Ions" Université Pierre et Marie Curie, 2005.  https://tel.archi
 from __future__ import print_function
 import numpy as np
 cimport cython
-cimport numpy as np
+cimport numpy as cnp
 from libc.string cimport memset
 from libc.stdint cimport int32_t, int16_t, INT16_MAX
 
@@ -48,9 +48,9 @@ cdef packed struct Cluster_t:
 DTYPE = np.int16
 ctypedef int16_t DTYPE_t
 
-#@cython.boundscheck(False)
-#@cython.wraparound(False)
-cdef void seeker(Cluster_t *cluster, np.ndarray[DTYPE_t, ndim=2, mode='c'] image, int j, int i, DTYPE_t threshold):
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef void seeker(Cluster_t *cluster, cnp.ndarray[DTYPE_t, ndim=2, mode='c'] image, int j, int i, DTYPE_t threshold):
     cdef int ec0 = cluster.ec
     cluster.nc += 1
     cluster.ec += image[j, i]
@@ -68,7 +68,7 @@ cdef void seeker(Cluster_t *cluster, np.ndarray[DTYPE_t, ndim=2, mode='c'] image
         seeker(cluster, image, j + 1, i, threshold)
 
 
-def cluster_analysis(np.ndarray image, int16_t image_index=-1, int threshold=0):
+def cluster_analysis(cnp.ndarray image, int16_t image_index=-1, int threshold=0):
     """
     Run cluster analysis on 2d-detector output
     :param image: [in] the image to be analysed
@@ -85,8 +85,8 @@ def cluster_analysis(np.ndarray image, int16_t image_index=-1, int threshold=0):
     cdef int j
     cdef int ic = 0
     cdef int size_cached
-    cdef np.ndarray[DTYPE_t, ndim=2, mode='c'] image_work = image.astype(DTYPE, order='C')
-    cdef np.ndarray[Cluster_t, ndim=1, mode="c"] cluster_array
+    cdef cnp.ndarray[DTYPE_t, ndim=2, mode='c'] image_work = image.astype(DTYPE, order='C')
+    cdef cnp.ndarray[Cluster_t, ndim=1, mode="c"] cluster_array
     cdef Cluster_t[:] cluster_view
     cluster_array = np.recarray(shape=(BLOCK_SIZE,), dtype=Cluster_dtype)
     size_cached = cluster_array.size
