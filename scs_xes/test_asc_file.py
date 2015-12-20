@@ -1,7 +1,7 @@
 import unittest
 from io import BytesIO
 import numpy as np
-from asc_file import AscFile
+from scs_xes.asc_file import AscFile
 
 TEST_ASC = b'''\
 1\t1\t2\t-3\r

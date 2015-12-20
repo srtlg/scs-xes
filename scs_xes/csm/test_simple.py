@@ -1,7 +1,7 @@
 import numpy as np
 from io import StringIO
 from cluster import cluster_analysis
-from test_cluster import TEST_IMAGE_2
+from scs_xes.csm.test_cluster import TEST_IMAGE_2
 
 
 def main():

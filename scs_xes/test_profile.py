@@ -4,8 +4,8 @@ Use Python's profiler to speed up the cluster analysis
 import argparse
 import cProfile
 import numpy as np
-from csm.cluster import cluster_analysis
-from asc_file import AscFile
+from scs_xes.csm.cluster import cluster_analysis
+from scs_xes.asc_file import AscFile
 
 
 def _parse_args():

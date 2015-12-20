@@ -2,11 +2,12 @@ from __future__ import print_function
 import argparse
 import logging
 import numpy as np
+import h5py
 import matplotlib.pyplot as plt
 import matplotlib.cm as cmap
 from scipy.optimize import curve_fit
-from asc_file import AscFile
-from csm.cluster import cluster_analysis, Cluster_dtype
+from scs_xes.asc_file import AscFile
+from scs_xes.csm.cluster import cluster_analysis, Cluster_dtype
 
 
 _log = logging.getLogger('scs-xes.analyse')
@@ -180,6 +181,15 @@ def _apply_curvature(args, clusters_acc, correction):
         plt.show()
 
 
+def _save_clusters(args, path, cluster_acc):
+    assert isinstance(cluster_acc, np.ndarray)
+    assert cluster_acc.dtype == Cluster_dtype
+    with h5py.File(path, 'w') as fout:
+        fout['/threshold'] = args.threshold
+        fout['/image-files'] = path.infile
+        fout['/cluster'] = cluster_acc
+
+
 def _process_clusters(args, clusters_acc):
     if args.get_curvature:
         _determine_curvature_correction(args, clusters_acc)
@@ -187,18 +197,17 @@ def _process_clusters(args, clusters_acc):
         correction = [float(i) for i in args.curvature.split(',')]
         _apply_curvature(args, clusters_acc, correction)
     elif args.pickle_clusters is not None:
-        if args.pickle_clusters.endswith('npy'):
+        if args.pickle_clusters.endswith('.h5'):
             tail = ''
         else:
-            tail = '.npy'
+            tail = '.h5'
         _log.debug('saving clusters to %s', args.pickle_clusters + tail)
-        np.save(args.pickle_clusters, clusters_acc)
+        _save_clusters(args, args.picle_clusters, clusters_acc)
     else:
-        k = list(Cluster_dtype.fields.items())
-        # FIXME: how to sort a list properly
-        #k.sort(lambda x: x[1][1])
-        #for field in k:
-        #    print(field)
+        fields = sorted(Cluster_dtype.fields.items(), key=lambda x: x[1][1])
+        for field in fields:
+            print(field[0], ' ' if field is fields[-1] else '', end='')
+        print('')
         for cluster in clusters_acc:
             print(*cluster)
 
