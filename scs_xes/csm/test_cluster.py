@@ -4,6 +4,8 @@ from io import StringIO
 from scs_xes.csm.cluster import cluster_analysis
 
 
+EQ_PLACES = 4
+
 TEST_IMAGE_1 = """\
  . . . . . . # 0
  . . 3 . . . # 1
@@ -22,8 +24,8 @@ class TestClusterSingle(unittest.TestCase):
         self.assertEqual(1, len(clusters))
         cluster = clusters[0]
         self.assertEqual(3+5+2+1, cluster.ec)
-        self.assertAlmostEqual((3.0*2 + 5*2 + 2*3 + 1*3)/cluster.ec, cluster.xc)
-        self.assertAlmostEqual((3.0*1 + 5*2 + 2*2 + 1*3)/cluster.ec, cluster.yc)
+        self.assertAlmostEqual((3.0*2 + 5*2 + 2*3 + 1*3)/cluster.ec, cluster.xc, EQ_PLACES)
+        self.assertAlmostEqual((3.0*1 + 5*2 + 2*2 + 1*3)/cluster.ec, cluster.yc, EQ_PLACES)
         self.assertEqual(4, cluster.nc)
 
 
@@ -75,8 +77,8 @@ class TestClusterTee(unittest.TestCase):
         self.assertEqual(1, len(clusters))
         cluster = clusters[0]
         self.assertEqual(1+7+2+3, cluster.ec)
-        self.assertAlmostEqual((1.0*2 + 7*3 + 3*3 + 2*4)/cluster.ec, cluster.xc)
-        self.assertAlmostEqual((1.0*2 + 7*2 + 2*2 + 3*3)/cluster.ec, cluster.yc)
+        self.assertAlmostEqual((1.0*2 + 7*3 + 3*3 + 2*4)/cluster.ec, cluster.xc, EQ_PLACES)
+        self.assertAlmostEqual((1.0*2 + 7*2 + 2*2 + 3*3)/cluster.ec, cluster.yc, EQ_PLACES)
         self.assertEqual(4, cluster.nc)
 
 
@@ -97,6 +99,6 @@ class TestClusterLineSouthWest(unittest.TestCase):
         self.assertEqual(1, len(clusters))
         cluster = clusters[0]
         self.assertEqual(np.sum(self.image), cluster.ec)
-        self.assertAlmostEqual(float((3+5)*0 + (3+2)*1 + 4*2 + (3+5)*3 + 6*4)/cluster.ec, cluster.xc)
-        self.assertAlmostEqual(float((3+6)*0 + (3+4+5)*1 + (3+2)*2 + 5*3)/cluster.ec, cluster.yc)
+        self.assertAlmostEqual(float((3+5)*0 + (3+2)*1 + 4*2 + (3+5)*3 + 6*4)/cluster.ec, cluster.xc, EQ_PLACES)
+        self.assertAlmostEqual(float((3+6)*0 + (3+4+5)*1 + (3+2)*2 + 5*3)/cluster.ec, cluster.yc, EQ_PLACES)
         self.assertEqual(8, cluster.nc)

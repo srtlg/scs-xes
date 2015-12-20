@@ -1,5 +1,3 @@
-# cython: profile=True
-# cython: linetrace=True
 """
 Implement the cluster analysis of CSM
 =====================================
@@ -23,25 +21,29 @@ import numpy as np
 cimport cython
 cimport numpy as np
 from libc.string cimport memset
+from libc.stdint cimport int32_t, int16_t
 
 
 Cluster_dtype = np.dtype([
     ('ec', np.int32),
-    ('nc', np.int32),
-    ('xc', np.float64),
-    ('yc', np.float64),
+    ('image', np.int16),
+    ('nc', np.int16),
+    ('xc', np.float32),
+    ('yc', np.float32),
     ])
 
 
 cdef enum:
-    BLOCK_SIZE = 10*1024
+    BLOCK_SIZE = 1024
+    NOT_CHARGED = 0
 
 
 cdef packed struct Cluster_t:
-    int ec
-    int nc
-    double xc
-    double yc
+    int32_t ec
+    int16_t image_index
+    int16_t nc
+    float xc
+    float yc
 
 
 #@cython.boundscheck(False)
@@ -53,7 +55,7 @@ cdef void seeker(Cluster_t *cluster, np.ndarray image, int j, int i, int thresho
     cluster.xc = (cluster.xc * ec0 + i * image[j, i]) / cluster.ec
     cluster.yc = (cluster.yc * ec0 + j * image[j, i]) / cluster.ec
     #print(cluster.nc, cluster.ec, cluster.xc, cluster.yc, ':', j, i, threshold, '|', image[j, i])
-    image[j, i] = 0 # fixme assumes that threshold >= 0
+    image[j, i] = NOT_CHARGED
     if (i - 1) >= 0 and image[j, i - 1] > threshold:
         seeker(cluster, image, j, i - 1, threshold)
     if (i + 1) < image.shape[1] and image[j, i + 1] > threshold:
@@ -64,13 +66,15 @@ cdef void seeker(Cluster_t *cluster, np.ndarray image, int j, int i, int thresho
         seeker(cluster, image, j + 1, i, threshold)
 
 
-def cluster_analysis(np.ndarray image, int threshold=0):
+def cluster_analysis(np.ndarray image, int16_t image_index=-1, int threshold=0):
     """
     Run cluster analysis on 2d-detector output
     :param image: [in] the image to be analysed
+    :param image_index: [in] the image index (for identifying the photon event later)
     :param threshold: [in] the threshold for colouring the pixels
     :return: the found clusters
     """
+    assert threshold >= 0, 'threshold too low, adjust NOT_CHARGED'
     assert image.ndim == 2, 'this routine expects a two dimensional image, got %d' % image.ndim
     cdef int iy_max = image.shape[0]
     cdef int ix_max = image.shape[1]
@@ -78,17 +82,21 @@ def cluster_analysis(np.ndarray image, int threshold=0):
     cdef int j
     cdef int ic = 0
     cdef np.ndarray image_work = image.copy()
-    cdef np.ndarray[Cluster_t, ndim=1] cluster_array
+    cdef np.ndarray[Cluster_t, ndim=1, mode="c"] cluster_array
+    cdef Cluster_t[:] cluster_view
     cluster_array = np.recarray(shape=(BLOCK_SIZE,), dtype=Cluster_dtype)
+    cluster_view = cluster_array
     memset(&cluster_array[0], 0, cluster_array.size * cluster_array.itemsize)
     for j in range(iy_max):
         for i in range(ix_max):
             if image_work[j, i] > threshold:
                 #print('>>>>', ic, '[%4d,%4d,] = %5d' % (j, i, image_work[j, i]), '|', len(cluster_array))
-                seeker(&cluster_array[ic], image_work, j, i, threshold)
+                cluster_view[ic].image_index = image_index
+                seeker(&cluster_view[ic], image_work, j, i, threshold)
                 ic += 1
                 if ic >= cluster_array.size:
                     cluster_array.resize((ic + BLOCK_SIZE,), refcheck=False)
+                    cluster_view = cluster_array
                     # see documentation of numpy.resize: ndarray.resize fills
                     # with zeros
     cluster_array.resize((ic,), refcheck=False)

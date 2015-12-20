@@ -228,25 +228,28 @@ def _load_images(args):
 
 def main():
     args = _argparse()
-    img = _load_images(args)
+    images = _load_images(args)
     if args.interactive:
         plt.ion()
-    if hasattr(img, 'dtype') and img.dtype == Cluster_dtype:
+    if hasattr(images, 'dtype') and images.dtype == Cluster_dtype:
         _log.info('processing pickled clusters from %s...', args.infile)
-        clusters_acc = img
+        clusters_acc = images
     else:
+        first = True
         _log.info('reading [0]...')
         clusters_acc = None
         index = 0
-        for i in img:
+        for image in images:
+            if not first:
+                _log.info('reading [%d]...', index)
+                first = False
             _log.info('cluster analysis...')
-            clusters = cluster_analysis(i, args.threshold)
-            _show_single_framge(args, clusters, i)
+            clusters = cluster_analysis(image, index, args.threshold)
+            _show_single_framge(args, clusters, image)
             clusters_acc = _accumulate_clusters(clusters_acc, clusters)
             index += 1
             if args.restrict_number_images and index >= args.restrict_number_images:
                 break
-            _log.info('reading [%d]...', index)
     _process_clusters(args, clusters_acc)
 
 
