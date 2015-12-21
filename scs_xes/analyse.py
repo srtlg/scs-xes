@@ -116,7 +116,7 @@ class AccumulationCoordinateProxy:
         return self.clusters_acc[self.energy_key]
 
 
-class FitCurvatureQuadratic:
+class CurvatureQuadratic:
     def __init__(self, coefficients):
         assert len(coefficients) == 4
         self.c = coefficients
@@ -140,7 +140,7 @@ class FitCurvatureQuadratic:
         return cls([acc_norm, par[0], par[1], par[2]])
 
 
-class FitCurvatureLinear:
+class CurvatureLinear:
     def __init__(self, coefficients):
         assert len(coefficients) == 3
         self.c = coefficients
@@ -164,7 +164,7 @@ class FitCurvatureLinear:
         return cls([acc_norm, par[0], par[1]])
 
 
-FitCurvature = FitCurvatureQuadratic
+Curvature = CurvatureQuadratic
 
 
 def _determine_curvature_correction(args, clusters_acc):
@@ -207,7 +207,7 @@ def _determine_curvature_correction(args, clusters_acc):
             plt.draw()
             if args.clf:
                 input('slice[%d:%d]>' % (idx_acc, idx_acc + args.accumulation_slice))
-    curvature = FitCurvature.from_points(proxy.acc_norm, curvature_acc_coord, curvature_energy_max)
+    curvature = Curvature.from_points(proxy.acc_norm, curvature_acc_coord, curvature_energy_max)
     print('curvature:', curvature.to_cmd_line())
     if args.interactive:
         plt.figure(2)
@@ -227,7 +227,7 @@ def _determine_curvature_correction(args, clusters_acc):
 
 
 def _apply_curvature(args, clusters_acc, correction):
-    curvature = FitCurvature(correction)
+    curvature = Curvature(correction)
     proxy = AccumulationCoordinateProxy(args, clusters_acc)
     energy = proxy.get_energy() - curvature.at(proxy.get_acc())
     if args.interactive:
