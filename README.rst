@@ -7,7 +7,8 @@ SCS-XES: X-ray emission spectroscopy software for SCS
 Installation
 ============
 
-::
+.. code-block::
+
 	python3 setup.py build_ext --inplace
 
 
@@ -22,14 +23,16 @@ Cluster analysis
 Analyze the first 30 frames (``-N30``) with a threshold of 70 (``-t70``) and save
 the result to ``476-s30.h5``.
 
-::
+.. code-block::
+
 	python -mscs_xes.analyse ../H2O_540eV_476.asc -t70 -N30 -O 476-s30
 
 
 Determine the curvature
 -----------------------
 
-::
+.. code-block::
+
     python -mscs_xes.analyse 476-s30.h5 -C \
     --energy-nbin=512 --accumulation-stop=1500 --accumulation-slice=64
 
@@ -37,7 +40,8 @@ Determine the curvature
 Generate spectrum
 -----------------
 
-::
+.. code-block::
+
     python -mscs_xes.analyse 476-s30.h5  -c-2.12726373e-01,1.18439527e+03 -I \
     --energy-nbin=4096 --energy-start=-100 --energy-stop=150
 
