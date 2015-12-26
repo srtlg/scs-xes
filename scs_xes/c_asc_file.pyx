@@ -88,14 +88,16 @@ cdef class cAscFile:
         return self
 
     def __next__(self):
+        cdef long initial_position
         cdef size_t num_cols
         cdef size_t row_number
         if feof(self._file):
             raise StopIteration
+        initial_position = ftell(self._file)
         num_cols = read_first_line(self._file, &self._line_buffer, &self._line_buffer_length, self._image)
         if num_cols == 0:
             raise StopIteration
-        self._image_start.append(ftell(self._file))
+        self._image_start.append(initial_position)
         self._image_index += 1
         if self._num_rows * num_cols != self._image.size:
             self._image.resize((self._num_rows * num_cols,), refcheck=False)
