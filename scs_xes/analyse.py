@@ -6,7 +6,10 @@ import h5py
 import matplotlib.pyplot as plt
 import matplotlib.cm as cmap
 from scipy.optimize import curve_fit
-from scs_xes.asc_file import AscFile
+try:
+    from scs_xes.c_asc_file import cAscFile as AscFile
+except ImportError:
+    from scs_xes.asc_file import AscFile
 from scs_xes.csm.cluster import cluster_analysis, Cluster_dtype
 
 

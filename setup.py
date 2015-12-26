@@ -22,6 +22,8 @@ def _force_rebuild(extensions):
 extensions = [
     Extension('scs_xes.csm.cluster',
         ['scs_xes/csm/cluster.pyx']),
+    Extension('scs_xes.c_asc_file',
+        ['scs_xes/c_asc_file.pyx']),
 ]
 
 cython_kwargs = dict()

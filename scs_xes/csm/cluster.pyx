@@ -47,6 +47,7 @@ cdef packed struct Cluster_t:
 
 DTYPE = np.int16
 ctypedef int16_t DTYPE_t
+cdef size_t DTYPE_MAX = INT16_MAX
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
@@ -78,7 +79,7 @@ def cluster_analysis(cnp.ndarray image, int16_t image_index=-1, int threshold=0)
     """
     assert threshold >= 0, 'threshold too low, adjust NOT_CHARGED'
     assert image.ndim == 2, 'this routine expects a two dimensional image, got %d' % image.ndim
-    assert (image <= INT16_MAX).all(), 'conversion into DTYPE will fail'
+    assert (image <= DTYPE_MAX).all(), 'conversion into DTYPE will fail'
     cdef int iy_max = image.shape[0]
     cdef int ix_max = image.shape[1]
     cdef int i
