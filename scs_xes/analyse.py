@@ -54,6 +54,7 @@ def _argparse():
     p.add_argument('-t', '--threshold', type=int, default=100)
     p.add_argument('-N', '--restrict-number-images', type=int, default=None)
     p.add_argument('-I', '--interactive', action='store_true', default=False)
+    p.add_argument('-R', '--number-rows', type=int, default=2048)
     p.add_argument('--clf', action='store_true', default=False)
     p.add_argument('--vmax-diff', type=int, default=10)
     p.add_argument('-C', '--get-curvature', action='store_true', default=False)
@@ -276,7 +277,7 @@ def _process_clusters(args, clusters_acc):
 
 def _load_images(args):
     if args.infile.endswith('asc'):
-        return AscFile(args.infile, dtype=np.int16)
+        return AscFile(args.infile, num_rows=args.number_rows, dtype=np.int16)
     elif args.infile.endswith('dat'):
         img = []
         for path in args.infile.split(','):
