@@ -40,7 +40,7 @@ setup(
     name='scs_xes',
     description='X-ray emission spectroscopy software for FS-SCS',
     author='Mirko Scholz',
-    version='0.2-dev',
+    version='0.3-dev',
     ext_modules=cythonize(extensions, compiler_directives=cython_kwargs),
 )
 
