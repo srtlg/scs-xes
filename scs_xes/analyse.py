@@ -3,6 +3,7 @@ import argparse
 import logging
 import numpy as np
 import h5py
+import itertools
 import matplotlib.pyplot as plt
 import matplotlib.cm as cmap
 from scipy.optimize import curve_fit
@@ -53,7 +54,7 @@ class FitGaussian:
 
 def _argparse():
     p = argparse.ArgumentParser()
-    p.add_argument('infile')
+    p.add_argument('infile', nargs='+')
     p.add_argument('-t', '--threshold', type=int, default=100)
     p.add_argument('-N', '--restrict-number-images', type=int, default=None)
     p.add_argument('-I', '--interactive', action='store_true', default=False)
@@ -251,7 +252,8 @@ def _save_clusters(args, path, cluster_acc):
     assert cluster_acc.dtype == Cluster_dtype
     with h5py.File(path, 'w') as fout:
         fout['/threshold'] = args.threshold
-        fout['/image-files'] = args.infile
+        for i, p in enumerate(args.infile):
+            fout['/image-files/%02d' % i] = p
         fout['/image-shape'] = args.image_shape
         fout['/cluster'] = cluster_acc
 
@@ -278,22 +280,22 @@ def _process_clusters(args, clusters_acc):
             print(*cluster)
 
 
+def _load_image(args, path, dtype=np.int16):
+    if path.endswith('.asc'):
+        return AscFile(path, num_rows=args.number_rows, dtype=dtype)
+    elif path.endswith('.dat'):
+        return [np.loadtxt(path, dtype=dtype)]
+    else:
+        raise NotImplementedError
+
+
 def _load_images(args):
-    if args.infile.endswith('asc'):
-        return AscFile(args.infile, num_rows=args.number_rows, dtype=np.int16)
-    elif args.infile.endswith('dat'):
-        img = []
-        for path in args.infile.split(','):
-            img.append(np.loadtxt(path, dtype=np.int16))
-        return img
-    elif args.infile.endswith('npy'):
-        return np.load(args.infile)
-    elif args.infile.endswith('.h5'):
-        inf = h5py.File(args.infile, 'r')
+    if len(args.infile) == 1 and args.infile[0].endswith('.h5'):
+        inf = h5py.File(args.infile[0], 'r')
         args.image_shape = inf['/image-shape'][:]
         return inf['/cluster'][:]
     else:
-        raise NotImplementedError
+        return itertools.chain(*map(lambda x, a=args: _load_image(a, x), args.infile))
 
 
 def main():
