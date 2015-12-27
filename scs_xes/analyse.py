@@ -304,7 +304,7 @@ def main():
     if args.interactive:
         plt.ion()
     if hasattr(images, 'dtype') and images.dtype == Cluster_dtype:
-        _log.info('processing pickled clusters from %s...', args.infile)
+        _log.info('processing pickled clusters from %s...', args.infile[0])
         clusters_acc = images
     else:
         _log.info('reading [0]...')
