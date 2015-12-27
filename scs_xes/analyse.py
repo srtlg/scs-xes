@@ -56,6 +56,7 @@ def _argparse():
     p = argparse.ArgumentParser()
     p.add_argument('infile', nargs='+')
     p.add_argument('-t', '--threshold', type=int, default=100)
+    p.add_argument('-M', '--skip-number-images', type=int, default=None)
     p.add_argument('-N', '--restrict-number-images', type=int, default=None)
     p.add_argument('-I', '--interactive', action='store_true', default=False)
     p.add_argument('-R', '--number-rows', type=int, default=2048)
@@ -310,9 +311,15 @@ def main():
         _log.info('reading [0]...')
         clusters_acc = None
         index = 0
+        if args.restrict_number_images and args.skip_number_images:
+            args.restrict_number_images += args.skip_number_images
         for image in images:
             if not hasattr(args, 'image_shape'):
                 args.image_shape = image.shape
+            if args.skip_number_images and index < args.skip_number_images:
+                index += 1
+                _log.info('reading [%d]...' % index)
+                continue
             _log.info('cluster analysis...')
             clusters = cluster_analysis(image, index, args.threshold)
             _show_single_framge(args, clusters, image)
