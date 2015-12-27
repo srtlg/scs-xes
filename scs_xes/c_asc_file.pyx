@@ -81,6 +81,9 @@ cdef class cAscFile:
         self._line_buffer_length = 8 * 1024
         self._line_buffer = <char *>malloc(self._line_buffer_length)
 
+    def get_start_indices(self):
+        return self._image_start
+
     def __iter__(self):
         self._image_index = 0
         self._image_start = []
