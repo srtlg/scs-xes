@@ -20,7 +20,6 @@ cdef size_t read_first_line(FILE *file, char **line_ptr, size_t *n_ptr,
     cdef long int value
     assert image.size > 0
     if getline(line_ptr, n_ptr, file) <= 0:
-        print('EOF')
         return 0
     current = line_ptr[0]
     value = strtol(current, &end, 10)
@@ -80,6 +79,8 @@ cdef class cAscFile:
         self._image_start = []
         self._line_buffer_length = 8 * 1024
         self._line_buffer = <char *>malloc(self._line_buffer_length)
+        if self._line_buffer == NULL:
+            raise RuntimeError('failed to allocate line buffer')
 
     def get_start_indices(self):
         return self._image_start
@@ -111,4 +112,7 @@ cdef class cAscFile:
     def __dealloc__(self):
         #print('image start:', self._image_start)
         free(self._line_buffer)
-        fclose(self._file)
+        if self._file == NULL:
+            print('WARNING: file descriptor is NULL?')
+        else:
+            fclose(self._file)
