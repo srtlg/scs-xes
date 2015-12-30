@@ -84,11 +84,11 @@ class Cluster:
         ax = plt.subplot(121)
         plt.imshow(image[hy:jy, hx:jx], vmin=0, vmax=np.max(image),
                    interpolation='nearest')
-        plt.plot(cluster['yc'] - hy, cluster['xc'] - hx, 'wo')
+        plt.plot(cluster['xc'] - hx, cluster['yc'] - hy, 'wo')
         plt.subplot(122, sharex=ax, sharey=ax)
         plt.imshow(image[hy:jy, hx:jx], vmin=self.threshold, vmax=self.threshold + 10,
                    interpolation='nearest')
-        plt.plot(cluster['yc'] - hy, cluster['xc'] - hx, 'wo')
+        plt.plot(cluster['xc'] - hx, cluster['yc'] - hy, 'wo')
 
 
 def cmd_hist_ec(args, cluster):
