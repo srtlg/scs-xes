@@ -281,13 +281,18 @@ def _process_clusters(args, clusters_acc):
             print(*cluster)
 
 
-def load_image(args, path, dtype=np.int16):
+def _load_image(path, asc_number_rows=None, dtype=np.int16):
     if path.endswith('.asc'):
-        return AscFile(path, num_rows=args.number_rows, dtype=dtype)
+        assert asc_number_rows is not None
+        return AscFile(path, num_rows=asc_number_rows, dtype=dtype)
     elif path.endswith('.dat'):
         return [np.loadtxt(path, dtype=dtype)]
     else:
         raise NotImplementedError
+
+
+def load_images(paths, **kwargs):
+    return itertools.chain(*map(lambda x: _load_image(x, **kwargs), paths))
 
 
 def _load_images(args):
@@ -296,7 +301,7 @@ def _load_images(args):
         args.image_shape = inf['/image-shape'][:]
         return inf['/cluster'][:]
     else:
-        return itertools.chain(*map(lambda x, a=args: load_image(a, x), args.infile))
+        return load_images(args.infile, asc_number_rows=args.number_rows)
 
 
 def main():

@@ -3,7 +3,7 @@ import numpy as np
 import h5py
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
-from scs_xes.analyse import load_image
+from scs_xes.analyse import load_images
 
 
 class ImagePathResolver:
@@ -33,7 +33,7 @@ class ImagePathResolverHDF5(ImagePathResolver):
         return paths
 
     def image_for_index(self, index):
-        loader = load_image(self, self.paths[0])
+        loader = load_images(self.paths, asc_number_rows=self.number_rows)
         it = iter(loader)
         for i in range(index + 1):
             img = next(it)
@@ -46,7 +46,7 @@ class ImagePathResolverDummy(ImagePathResolver):
         self.number_rows = None
 
     def image_for_index(self, index):
-        loader = load_image(self, self.path)
+        loader = load_images(self, self.path)
         it = iter(loader)
         for i in range(index + 1):
             img = next(it)
