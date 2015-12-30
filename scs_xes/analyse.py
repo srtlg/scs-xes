@@ -281,7 +281,7 @@ def _process_clusters(args, clusters_acc):
             print(*cluster)
 
 
-def _load_image(args, path, dtype=np.int16):
+def load_image(args, path, dtype=np.int16):
     if path.endswith('.asc'):
         return AscFile(path, num_rows=args.number_rows, dtype=dtype)
     elif path.endswith('.dat'):
@@ -296,7 +296,7 @@ def _load_images(args):
         args.image_shape = inf['/image-shape'][:]
         return inf['/cluster'][:]
     else:
-        return itertools.chain(*map(lambda x, a=args: _load_image(a, x), args.infile))
+        return itertools.chain(*map(lambda x, a=args: load_image(a, x), args.infile))
 
 
 def main():
