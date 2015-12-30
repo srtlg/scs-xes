@@ -1,4 +1,5 @@
 import os
+import numpy
 from distutils.core import setup
 from Cython.Build import cythonize
 from distutils.extension import Extension
@@ -44,5 +45,6 @@ setup(
     author='Mirko Scholz',
     version='0.3-dev',
     ext_modules=cythonize(extensions, compiler_directives=cython_kwargs),
+    include_dirs=[numpy.get_include()],
 )
 
