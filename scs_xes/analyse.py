@@ -65,6 +65,7 @@ def _argparse():
     p.add_argument('-C', '--get-curvature', action='store_true', default=False)
     p.add_argument('-c', '--curvature', default=None)
     p.add_argument('-O', '--pickle-clusters', default=None)
+    p.add_argument('--intensity-divisor', type=float)
     g1 = p.add_argument_group('curvature')
     g1.add_argument('--accumulation-coordinate', choices=('fast', 'slow'), default='slow')
     g1.add_argument('--accumulation-start', type=int, default=None)
@@ -237,7 +238,11 @@ def _apply_curvature(args, clusters_acc, correction):
     proxy = AccumulationCoordinateProxy(args, clusters_acc)
     energy = proxy.get_energy() - curvature.at(proxy.get_acc())
     if args.interactive:
-        plt.hist(energy, args.energy_nbin, histtype='step')
+        if args.intensity_divisor:
+            weight = clusters_acc['ec'] / args.intensity_divisor
+            plt.hist(energy, args.energy_nbin, weights=weight, histtype='step')
+        else:
+            plt.hist(energy, args.energy_nbin, histtype='step')
         plt.xlabel('corrected energy (pixel)')
         plt.ylabel('intensity')
         if args.energy_start:
