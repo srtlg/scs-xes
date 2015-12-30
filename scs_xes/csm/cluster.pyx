@@ -45,6 +45,7 @@ cdef packed struct Cluster_t:
     float xc
     float yc
 
+
 DTYPE = np.int16
 ctypedef int16_t DTYPE_t
 cdef size_t DTYPE_MAX = INT16_MAX
@@ -53,10 +54,14 @@ cdef size_t DTYPE_MAX = INT16_MAX
 @cython.wraparound(False)
 cdef void seeker(Cluster_t *cluster, cnp.ndarray[DTYPE_t, ndim=2, mode='c'] image, int j, int i, DTYPE_t threshold):
     cdef int ec0 = cluster.ec
+    cdef float xcP = cluster.xc
+    cdef float ycP = cluster.yc
+    cdef float ecf
     cluster.nc += 1
     cluster.ec += image[j, i]
-    cluster.xc = (cluster.xc * ec0 + i * image[j, i]) / cluster.ec
-    cluster.yc = (cluster.yc * ec0 + j * image[j, i]) / cluster.ec
+    ecf = <float>cluster.ec
+    cluster.xc = cluster.xc + image[j, i] * (<float>i - xcP) / ecf
+    cluster.yc = cluster.yc + image[j, i] * (<float>j - ycP) / ecf
     #print(cluster.nc, cluster.ec, cluster.xc, cluster.yc, ':', j, i, threshold, '|', image[j, i])
     image[j, i] = NOT_CHARGED
     if (i - 1) >= 0 and image[j, i - 1] > threshold:
