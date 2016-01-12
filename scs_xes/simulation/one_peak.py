@@ -5,4 +5,4 @@ energy_range_eV = 100.0, 200.0
 
 
 def spectrum(x):
-    return np.exp(-LN_2 * ((x - 150.0) / 20.0)**2) + 0.01
+    return np.exp(-LN_2 * ((x - 150.0) / 5.0)**2) + 0.01

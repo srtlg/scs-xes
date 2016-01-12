@@ -4,8 +4,8 @@ Simulate a spectrum based on a continuous function
 import argparse
 import importlib
 import numpy as np
-import numpy.polynomial.chebyshev as np_cheb
 import matplotlib.pyplot as plt
+from scipy.interpolate import InterpolatedUnivariateSpline
 
 
 INTERACTIVE1 = False
@@ -17,24 +17,20 @@ class Spectrum:
 
     Uses the transformation method of uniformly distributed random numbers
     (see [NumRecipPas]_ §7.2).
-
-    In order to invert the corresponding CDF we use Chebyshev polynomials
-    (see somewhere at SE).
     """
     def __init__(self, spectrum):
         mod = importlib.import_module('scs_xes.simulation.%s' % spectrum)
         self.spectrum = getattr(mod, 'spectrum')
         self.energy_range_eV = getattr(mod, 'energy_range_eV')
         self.trafo_resolution = 1000
-        self.cheb_degree = 24
-        self.cheb_coef = None
+        self.spline_kwargs = {}
+        self.spline = None
         self.energy_to_pixel = None
 
     def _prepare_transformation_method(self):
         energy, pdf_normed = self.get_pdf()
         cdf_normed = np.cumsum(pdf_normed)
-        cdf_cheb_domain = 2 * cdf_normed - 1.0
-        cheb_coef = np_cheb.chebfit(cdf_cheb_domain, energy, self.cheb_degree)
+        spline = InterpolatedUnivariateSpline(cdf_normed, energy, *self.spline_kwargs)
         if INTERACTIVE1:
             plt.figure(1)
             ax1 = plt.subplot(211)
@@ -44,19 +40,19 @@ class Spectrum:
             plt.xlim(self.energy_range_eV)
             plt.figure(2)
             ax2 = plt.subplot(211)
-            cdf_inverse = np_cheb.chebval(cdf_cheb_domain, cheb_coef)
-            plt.plot(cdf_cheb_domain, energy)
-            plt.plot(cdf_cheb_domain, cdf_inverse)
+            cdf_inverse = spline(cdf_normed)
+            plt.plot(cdf_normed, energy)
+            plt.plot(cdf_normed, cdf_inverse)
             plt.ylim(*self.energy_range_eV)
             plt.subplot(212, sharex=ax2)
-            plt.plot(cdf_cheb_domain, energy - cdf_inverse)
-            plt.xlim(-1.0, 1.0)
-        return cheb_coef
+            plt.plot(cdf_normed, energy - cdf_inverse)
+            plt.xlim(0.0, 1.0)
+        return spline
 
     def simulate(self, num_events):
-        if self.cheb_coef is None:
-            self.cheb_coef = self._prepare_transformation_method()
-        return np_cheb.chebval(2 * np.random.random_sample((num_events,)) - 1.0, self.cheb_coef)
+        if self.spline is None:
+            self.spline = self._prepare_transformation_method()
+        return self.spline(np.random.random_sample((num_events,)))
 
     def get_pdf(self, npoints=None):
         if npoints is None:
