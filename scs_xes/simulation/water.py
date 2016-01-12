@@ -36,4 +36,6 @@ p_4 = Gaussian(d_10, d_11, d_12)
 p_6 = Gaussian(d_15, d_16, d_17)
 p_1 = Constant(d_1)
 
-spectrum = lambda x: sum((f(x) for f in (p_1, p_2, p_3, p_4, p_6)))
+
+def spectrum(x):
+    return sum((f(x) for f in (p_1, p_2, p_3, p_4, p_6)))
