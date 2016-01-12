@@ -31,9 +31,7 @@ class Spectrum:
         self.energy_to_pixel = None
 
     def _prepare_transformation_method(self):
-        energy = np.linspace(min(self.energy_range_eV), max(self.energy_range_eV), self.trafo_resolution)
-        pdf_normed = self.spectrum(energy)
-        pdf_normed /= np.sum(pdf_normed)
+        energy, pdf_normed = self.get_pdf()
         cdf_normed = np.cumsum(pdf_normed)
         cdf_cheb_domain = 2 * cdf_normed - 1.0
         cheb_coef = np_cheb.chebfit(cdf_cheb_domain, energy, self.cheb_degree)
@@ -60,6 +58,14 @@ class Spectrum:
             self.cheb_coef = self._prepare_transformation_method()
         return np_cheb.chebval(2 * np.random.random_sample((num_events,)) - 1.0, self.cheb_coef)
 
+    def get_pdf(self, npoints=None):
+        if npoints is None:
+            npoints = self.trafo_resolution
+        energy = np.linspace(min(self.energy_range_eV), max(self.energy_range_eV), npoints)
+        pdf_normed = self.spectrum(energy)
+        pdf_normed /= np.sum(pdf_normed)
+        return energy, pdf_normed
+
 
 def _parse_args():
     p = argparse.ArgumentParser()
@@ -84,7 +90,11 @@ def main():
         np.random.seed()
     if args.interactive:
         plt.figure()
-        plt.hist(energies, args.number_of_bins, histtype='step')
+        n = 512
+        x, y = sp.get_pdf(n)
+        dbin = np.diff(sp.energy_range_eV)[0] / n
+        plt.plot(x, y / dbin, linewidth=3.0)
+        count, _, _ = plt.hist(energies, args.number_of_bins, histtype='step', normed=1)
         plt.xlim(*sp.energy_range_eV)
     if any((INTERACTIVE1, args.interactive)):
         plt.show()
